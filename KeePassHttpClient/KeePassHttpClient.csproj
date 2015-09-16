@@ -51,6 +51,7 @@
     <Compile Include="KeePassHttpConnection.cs" />
     <Compile Include="KeePassHttpConnectionInfo.cs" />
     <Compile Include="KeePassHttpException.cs" />
+    <Compile Include="KeePassHttpRequestSearchField.cs" />
     <Compile Include="KeePassHttpRequestType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="KeePassHttpRequest.cs" />

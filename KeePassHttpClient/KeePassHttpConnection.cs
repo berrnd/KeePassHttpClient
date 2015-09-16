@@ -76,7 +76,7 @@ namespace KeePassHttpClient
         {
             if (this.Hash == null)
             {
-                KeePassHttpRequest request = new KeePassHttpRequest {RequestType = KeePassHttpRequestType.TEST_ASSOCIATE};
+                KeePassHttpRequest request = new KeePassHttpRequest { RequestType = KeePassHttpRequestType.TEST_ASSOCIATE };
                 this.SetVerifier(request);
                 KeePassHttpResponse response = this.Send(request);
                 this.Hash = response.Hash;
@@ -144,6 +144,8 @@ namespace KeePassHttpClient
         {
             string username = String.Empty;
             string password = String.Empty;
+            string uuid = String.Empty;
+            string name = String.Empty;
 
             using (ICryptoTransform decryptor = this.AesManaged.CreateDecryptor(this.Key, Convert.FromBase64String(IV)))
             {
@@ -158,31 +160,79 @@ namespace KeePassHttpClient
                     byte[] bytes = Convert.FromBase64String(entry.Login);
                     username = Encoding.UTF8.GetString(decryptor.TransformFinalBlock(bytes, 0, bytes.Length));
                 }
-            }
 
-            return new KeePassCredential(username, password);
+                if (!String.IsNullOrEmpty(entry.Uuid))
+                {
+                    byte[] bytes = Convert.FromBase64String(entry.Uuid);
+                    uuid = Encoding.UTF8.GetString(decryptor.TransformFinalBlock(bytes, 0, bytes.Length));
+                }
+
+                if (!String.IsNullOrEmpty(entry.Name))
+                {
+                    byte[] bytes = Convert.FromBase64String(entry.Name);
+                    name = Encoding.UTF8.GetString(decryptor.TransformFinalBlock(bytes, 0, bytes.Length));
+                }
+
+                KeePassCredential credential = new KeePassCredential(username, password, uuid, name);
+
+                if (entry.StringFields != null)
+                {
+                    foreach (KeePassHttpResponseStringField item in entry.StringFields)
+                    {
+                        string key = String.Empty;
+                        string value = String.Empty;
+
+                        if (!String.IsNullOrEmpty(item.Key))
+                        {
+                            byte[] bytes = Convert.FromBase64String(item.Key);
+                            key = Encoding.UTF8.GetString(decryptor.TransformFinalBlock(bytes, 0, bytes.Length));
+                        }
+
+                        if (!String.IsNullOrEmpty(item.Value))
+                        {
+                            byte[] bytes = Convert.FromBase64String(item.Value);
+                            value = Encoding.UTF8.GetString(decryptor.TransformFinalBlock(bytes, 0, bytes.Length));
+                        }
+
+                        credential.StringFields.Add(new KeePassHttpResponseStringField(key, value));
+                    }
+                }
+
+                return credential;
+            }
         }
 
-        public KeePassCredential[] RetrieveCredentials(string url)
+        public KeePassCredential[] RetrieveCredentialsByUrl(string url)
+        {
+            return this.RetrieveCredentials(url, KeePassHttpRequestSearchField.Url);
+        }
+
+        private KeePassCredential[] RetrieveCredentials(string searchString, KeePassHttpRequestSearchField searchField)
         {
             if (this.Key != null && this.Id != null)
             {
-                KeePassHttpRequest request = new KeePassHttpRequest() { RequestType = KeePassHttpRequestType.GET_LOGINS };
+                KeePassHttpRequest request = new KeePassHttpRequest();
+                if (searchField == KeePassHttpRequestSearchField.Url)
+                    request.RequestType = KeePassHttpRequestType.GET_LOGINS;
+
                 this.SetVerifier(request);
-                
                 using (ICryptoTransform encryptor = this.AesManaged.CreateEncryptor())
                 {
-                    
-                    byte[] bytes = Encoding.UTF8.GetBytes(url);
+
+                    byte[] bytes = Encoding.UTF8.GetBytes(searchString);
                     byte[] buffer = encryptor.TransformFinalBlock(bytes, 0, bytes.Length);
-                    request.Url = Convert.ToBase64String(buffer);
+
+                    if (searchField == KeePassHttpRequestSearchField.Url)
+                        request.Url = Convert.ToBase64String(buffer);
+                    else if (searchField == KeePassHttpRequestSearchField.Uuid)
+                        request.Uuid = searchString;
                 }
 
                 KeePassHttpResponse response = this.Send(request);
 
                 if (!response.Success)
                     throw new KeePassHttpException(String.Format("Error requesting KeePass credentials ({0})", response.Error ?? "unknown error from KeePassHttp"));
-                
+
                 return response.Entries.Select(entry => this.DecryptEntry(entry, response.Nonce)).ToArray();
             }
 
