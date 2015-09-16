@@ -207,6 +207,11 @@ namespace KeePassHttpClient
             return this.RetrieveCredentials(url, KeePassHttpRequestSearchField.Url);
         }
 
+        public KeePassCredential[] RetrieveCredentialsByCustomSearchString(string searchString)
+        {
+            return this.RetrieveCredentials(searchString, KeePassHttpRequestSearchField.Any);
+        }
+
         private KeePassCredential[] RetrieveCredentials(string searchString, KeePassHttpRequestSearchField searchField)
         {
             if (this.Key != null && this.Id != null)
@@ -214,6 +219,8 @@ namespace KeePassHttpClient
                 KeePassHttpRequest request = new KeePassHttpRequest();
                 if (searchField == KeePassHttpRequestSearchField.Url)
                     request.RequestType = KeePassHttpRequestType.GET_LOGINS;
+                else if (searchField == KeePassHttpRequestSearchField.Any)
+                    request.RequestType = KeePassHttpRequestType.GET_LOGINS_CUSTOM_SEARCH;
 
                 this.SetVerifier(request);
                 using (ICryptoTransform encryptor = this.AesManaged.CreateEncryptor())
@@ -224,8 +231,8 @@ namespace KeePassHttpClient
 
                     if (searchField == KeePassHttpRequestSearchField.Url)
                         request.Url = Convert.ToBase64String(buffer);
-                    else if (searchField == KeePassHttpRequestSearchField.Uuid)
-                        request.Uuid = searchString;
+                    else if (searchField == KeePassHttpRequestSearchField.Any)
+                        request.SearchString = Convert.ToBase64String(buffer);
                 }
 
                 KeePassHttpResponse response = this.Send(request);

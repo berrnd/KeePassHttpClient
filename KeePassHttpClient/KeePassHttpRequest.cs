@@ -15,5 +15,6 @@
         public string Verifier { get; set; }
         public string Nonce { get; set; }
         public string Realm { get; set; }
+        public string SearchString { get; set; }
     }
 }

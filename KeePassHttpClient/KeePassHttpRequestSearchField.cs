@@ -2,7 +2,7 @@
 {
     public enum KeePassHttpRequestSearchField
     {
-        Uuid,
+        Any,
         Url
     }
 }
