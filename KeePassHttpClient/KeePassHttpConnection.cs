@@ -1,5 +1,6 @@
 ﻿using ServiceStack;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -14,6 +15,9 @@ namespace KeePassHttpClient
         public string Hash { get; private set; }
         public string Id { get; private set; }
         public byte[] Key { get; private set; }
+        public bool Debug { get; set; } = false;
+        public Dictionary<DateTime, KeePassHttpRequest> RequestList { get; set; } = new Dictionary<DateTime, KeePassHttpRequest>();
+        public Dictionary<DateTime, KeePassHttpResponse> ResponseList { get; set; } = new Dictionary<DateTime, KeePassHttpResponse>();
         private readonly Aes AesManaged;
 
         public KeePassHttpConnection(string host, int port, string id, byte[] key)
@@ -45,13 +49,21 @@ namespace KeePassHttpClient
         
         private KeePassHttpResponse Send(KeePassHttpRequest request)
         {
+            if (this.Debug)
+                this.RequestList.Add(DateTime.Now, request);
+
             try
             {
                 using (WebClient webClient = new WebClient())
                 {
                     webClient.Headers[HttpRequestHeader.ContentType] = "application/json";
                     string requestString = request.ToJson();
-                    return webClient.UploadString(this.GetKeePassHttpUri(), requestString).FromJson<KeePassHttpResponse>();
+                    KeePassHttpResponse response = webClient.UploadString(this.GetKeePassHttpUri(), requestString).FromJson<KeePassHttpResponse>(); ;
+
+                    if (this.Debug)
+                        this.ResponseList.Add(DateTime.Now, response);
+
+                    return response;
                 }
             }
             catch (WebException ex)
