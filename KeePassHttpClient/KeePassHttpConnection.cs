@@ -77,6 +77,7 @@ namespace KeePassHttpClient
             if (this.Hash == null)
             {
                 KeePassHttpRequest request = new KeePassHttpRequest {RequestType = KeePassHttpRequestType.TEST_ASSOCIATE};
+                this.SetVerifier(request);
                 KeePassHttpResponse response = this.Send(request);
                 this.Hash = response.Hash;
                 return response.Success;
