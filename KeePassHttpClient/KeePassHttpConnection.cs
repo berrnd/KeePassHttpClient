@@ -60,21 +60,16 @@ namespace KeePassHttpClient
             }
         }
 
-        public void Connect()
+        public bool Connect()
         {
             if (this.Hash == null)
             {
                 KeePassHttpRequest request = new KeePassHttpRequest {RequestType = KeePassHttpRequestType.TEST_ASSOCIATE};
                 KeePassHttpResponse response = this.Send(request);
                 this.Hash = response.Hash;
+                return response.Success;
             }
-        }
-
-        public bool IsAssociated()
-        {
-            KeePassHttpRequest request = new KeePassHttpRequest { RequestType = KeePassHttpRequestType.TEST_ASSOCIATE };
-            KeePassHttpResponse response = this.Send(request);
-            return response.Success;
+            return true;
         }
 
         public void Disconnect()
