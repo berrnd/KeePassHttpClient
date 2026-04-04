@@ -1,3 +1,8 @@
+-----
+> [!CAUTION]
+> This is archived and no longer maintained.
+-----
+
 # KeePassHttpClient
 
 KeePassHttpClient is a .Net library of for accessing a [KeePass](http://keepass.info/) database through [KeePassHttp](https://github.com/pfn/keepasshttp/).
